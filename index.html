@@ -1,4 +1,4 @@
-<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<!DOCTYPE html>
 <html>
 <head>
 <title>TF diver</title>
@@ -9,70 +9,42 @@
 <script language="javascript" src="js/game.js" type="text/javascript"></script>
 </head>
 <body>
-<script>
+<script type="text/javascript">
 
 
-
+	var bgu = new backgroundUnit();
 window.onload = function()
 {
-	var iterator = 0;
-	var bgu = new backgroundUnit();
-/*
-	var canva = document.getElementById("gameCanvas");
-	var gameContext = canva.getContext('2d');  // Контекст холста
-	gameContext.canvas.width = 716;
-	gameContext.canvas.height = 491;
-	gameContext.clearRect(0, 0, 716, 491);
 
+
+
+	bgu.init();
 
 	var gameField = document.getElementById("gameCanvas");
+	gameField.onclick = function(e){
+		var base = document.getElementById("main");
+		var x = document.body.scrollLeft + e.clientX - base.offsetLeft - this.offsetLeft;
+		var y = document.body.scrollTop + e.clientY - base.offsetTop - this.offsetTop;
+		//console.log(x + " " + y);
+		bgu.addStar(x, y);
+	}
 
-	bgu.cloud.onload = function() {
-		gameContext.clearRect(0, 0, 716, 491);
-		gameContext.drawImage(bgu.cloud, 10, 10, 10, 10);
-		gameContext.drawImage(bgu.cloud, 10, 10, 10, 10);
-		gameField.onclick = function(e){
-			//gameContext.save();
-			var base = document.getElementById("main");
-			if (!e) var e = window.event;
-			var x = document.body.scrollLeft + e.clientX - base.offsetLeft - this.offsetLeft;
-			var y = document.body.scrollTop + e.clientY - base.offsetTop - this.offsetTop;
-			console.log(bgu.cloud.width);
-			gameContext.drawImage(bgu.clouds, x, y);
-			//gameContext.restore();
-		}
-	};
-*/
+	document.getElementById("addDiver").onclick = function(e){
+		bgu.addDiver();
+	}
 
 
 
 
-	var backCanvas = document.getElementById("backCanvas");
-	var ctx = backCanvas.getContext('2d');  // Контекст холста
-	ctx.canvas.width = 716;
-	ctx.canvas.height = 597;
-
-	setInterval(function(){
-		var date = new Date();
-		var w = ctx.canvas.width;
-		var h = ctx.canvas.height;
-		
-		ctx.clearRect(0, 0, w, h);
-		ctx.save();
-
-		bgu.renderBackground(ctx, iterator++)
-
-		ctx.restore();
-	}, 100);
 
 
 
 }
 </script>
 <div id="main">
-	<div id="tools">добавить водолаза удалить водолаза</div>
+	<div id="tools"><button id="addDiver">добавить водолаза</button> удалить водолаза</div>
 	<canvas id="backCanvas">Обновите браузер</canvas>
-	<canvas id="gameCanvas">Обновите браузер</canvas>
+	<div id="gameCanvas"></div>
 </div>
 </body>
 </html>
