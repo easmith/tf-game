@@ -6,6 +6,7 @@
 <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
 <link rel="stylesheet" type="text/css" href="main.css" />
 <script language="javascript" src="js/gameunit.js" type="text/javascript"></script>
+<script language="javascript" src="js/game.js" type="text/javascript"></script>
 </head>
 <body>
 <script>
@@ -15,29 +16,62 @@
 window.onload = function()
 {
 	var iterator = 0;
-	var gu = new gameUnit();
-	var example = document.getElementById("gameCanvas");
-	var ctx = example.getContext('2d');  // Контекст холста
+	var bgu = new backgroundUnit();
+/*
+	var canva = document.getElementById("gameCanvas");
+	var gameContext = canva.getContext('2d');  // Контекст холста
+	gameContext.canvas.width = 716;
+	gameContext.canvas.height = 491;
+	gameContext.clearRect(0, 0, 716, 491);
+
+
+	var gameField = document.getElementById("gameCanvas");
+
+	bgu.cloud.onload = function() {
+		gameContext.clearRect(0, 0, 716, 491);
+		gameContext.drawImage(bgu.cloud, 10, 10, 10, 10);
+		gameContext.drawImage(bgu.cloud, 10, 10, 10, 10);
+		gameField.onclick = function(e){
+			//gameContext.save();
+			var base = document.getElementById("main");
+			if (!e) var e = window.event;
+			var x = document.body.scrollLeft + e.clientX - base.offsetLeft - this.offsetLeft;
+			var y = document.body.scrollTop + e.clientY - base.offsetTop - this.offsetTop;
+			console.log(bgu.cloud.width);
+			gameContext.drawImage(bgu.clouds, x, y);
+			//gameContext.restore();
+		}
+	};
+*/
+
+
+
+
+	var backCanvas = document.getElementById("backCanvas");
+	var ctx = backCanvas.getContext('2d');  // Контекст холста
 	ctx.canvas.width = 716;
 	ctx.canvas.height = 597;
 
 	setInterval(function(){
-		iterator++;
 		var date = new Date();
 		var w = ctx.canvas.width;
 		var h = ctx.canvas.height;
+		
 		ctx.clearRect(0, 0, w, h);
-		var delta = (date.getSeconds() * 1000 + date.getMilliseconds())/ 10;
-		var waveDelta = Math.abs(iterator/2 % 25);
-		ctx.drawImage(gu.wave1, waveDelta - 25, 66);
-		ctx.drawImage(gu.wave2, -waveDelta, 80);
-		ctx.drawImage(gu.wave3, waveDelta - 25, 94);
-	}, 50);
+		ctx.save();
+
+		bgu.renderBackground(ctx, iterator++)
+
+		ctx.restore();
+	}, 100);
+
+
 
 }
 </script>
 <div id="main">
 	<div id="tools">добавить водолаза удалить водолаза</div>
+	<canvas id="backCanvas">Обновите браузер</canvas>
 	<canvas id="gameCanvas">Обновите браузер</canvas>
 </div>
 </body>

@@ -14,6 +14,7 @@ root {
 	height: 682px;
 	margin: 10px auto;
 	border: 1px solid #c0c0c0;
+	position: relative;
 	border-radius: 20px;
 	background:-moz-linear-gradient(top,  #02b1d0,  #014e96);
 }
@@ -24,11 +25,22 @@ root {
 	border: 1px solid red;
 }
 
-#gameCanvas {
+#backCanvas {
 	/*width: 716px;
 	height: 597px;
 	*/border: 1px solid red;
 	margin: 0px 20px 20px 20px;
 	border-radius: 15px;
 	background: url('images/back-clear.jpg');
+}
+
+#gameCanvas {
+	top: 170px;
+	width: 716px;
+	height: 491px;
+	left: 0px;
+	position: absolute;
+	border: 1px solid yellow;
+	margin: 0px 20px 20px 20px;
+	border-radius: 15px;
 }
