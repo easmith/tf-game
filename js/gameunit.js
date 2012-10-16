@@ -13,8 +13,7 @@ function backgroundUnit()
 		this.ctx.canvas.height = 597;
 		var self = this;
 		setInterval(function(){
-//			console.log(self);
-			self.renderBackground(self.iterator++)
+			self.renderGame(self.iterator++)
 		}, 25);
 	}
 
@@ -69,6 +68,8 @@ function backgroundUnit()
 		tros : newImage('images/tros.png')
 	}
 
+	this.foundStars = {};
+
 	this.divers = {};
 	this.stars = {};
 
@@ -80,7 +81,7 @@ function backgroundUnit()
 	this.addStar = function(x, y)
 	{
 		var countStars = Object.keys(this.stars).length;
-		if (countStars < 20)
+		if (countStars < 50)
 			this.stars['star' + this.iterator] = new this.star(x, y, 'star' + this.iterator);
 	}
 
@@ -89,14 +90,14 @@ function backgroundUnit()
 		this.direction = 'd'; // d, w (wait)
 		this.state = 'free';// free, owned, spotted
 		this.position = {'x' : x, 'y' : y};
-		this.value = Math.round(Math.random() * 11);
+		this.value = Math.round(Math.random() * 10);
 		this.img = self.images['star' + this.value];
 
 		this.newPosition = function()
 		{
 			switch (this.direction) {
 				case 'd': {
-					if (this.position.y > 525) { this.direction = 'w'; this.position.y += Math.round(Math.random() * 10); }
+					if (this.position.y > 515) { this.direction = 'w'; this.position.y += Math.round(Math.random() * 10); }
 					this.position.y += 4;
 				}
 			}
@@ -120,7 +121,8 @@ function backgroundUnit()
 		this.oxygen = 20000;
 		this.haveStar = {};
 		this.spottedStar = {name:'empty', value:0};
-		this.position = {x : 585, y : 100};
+		this.smallestStar = {name:'empty', value:0};
+		this.position = {x : 585, y : 80};
 		this.purpose = {x : 586, y : 520};
 		this.img = self.images.diverdown;
 
@@ -189,7 +191,7 @@ function backgroundUnit()
 //						break;
 //					}
 					if (this.position.y == 520) this.position.x += 35;
-					if (this.position.y > 100) this.position.y -= 1;
+					if (this.position.y > 80) this.position.y -= 1;
 					if (this.position.y > 460 && this.position.y < 520) this.position.x -= 17/60;
 					if (this.position.y >= 310 && this.position.y <= 460) this.position.x += 17/155;
 					if (this.position.y == 260) this.position.x -= 1;
@@ -212,7 +214,7 @@ function backgroundUnit()
 
 		this.checkPosition = function()
 		{
-			if (this.purpose.x != Math.round(this.position.x) || this.purpose.y != Math.round(this.position.y)) return;
+			if (Math.round(this.purpose.x) != Math.round(this.position.x) || Math.round(this.purpose.y) != Math.round(this.position.y)) return;
 			
 			switch (this.state)
 			{
@@ -223,20 +225,28 @@ function backgroundUnit()
 				}
 				case 'scan': {
 					if (this.spottedStar.name == 'empty') break;
-					console.log('Плыву мимо =)');
 					this.pickupStar()
 					break;
 				}
 				case 'ascent': {
-					this.newPurpose('ascent', 620, 100)
+					this.newPurpose('ascent', 620, 80)
+					if (Math.round(this.position.y) != 80)
+					{
+						this.compensation();
+					}
 					this.changeDirection('u');
-					if (Math.round(this.position.y) == 100)
+					if (Math.round(this.position.y) == 80)
 					{
 						this.changeDirection('z');
 					}
 					break;
 				}
 			}
+		}
+
+		this.say = function(str)
+		{
+			console.log(this.name + ": " + str);
 		}
 
 		this.breathe = function()
@@ -246,6 +256,12 @@ function backgroundUnit()
 				this.oxygen += 3000/50;
 				if (this.oxygen > 20000)
 				{
+					for (var s in this.haveStar)
+					{
+						self.foundStars[s] = this.haveStar[s];
+					}
+					this.haveStar = {};
+					this.setSmallestStar();
 					this.oxygen = 20000;
 					this.changeDirection('d');
 					this.newPurpose('dive', this.position.x + 1, 520);
@@ -260,7 +276,11 @@ function backgroundUnit()
 					this.oxygen -= (this.haveStar[i].value / 20);
 			}
 			// хватает ли нам кислорода?
-			if (this.oxygen < 5000 && this.state != 'ascent') this.newPurpose('ascent', 586, Math.round(this.position.y));
+			if (this.oxygen < 5000 && this.state != 'ascent')
+			{
+				this.say('Кончается кислород... Возвращаюсь на корабль');
+				this.newPurpose('ascent', 586, Math.round(this.position.y));
+			}
 		}
 
 		this.scan = function(){
@@ -270,22 +290,25 @@ function backgroundUnit()
 				if (star.state == "free"
 					&& star.direction == "w"
 					&& this.spottedStar.value < star.value
+					&& (this.smallestStar.name == 'empty' || (this.smallestStar.value < star.value || Object.keys(this.haveStar).length < 2))
 					&& Math.abs(star.position.x - this.position.x) < 260)
 				{
 					// Освобождаю звезду
 					if (this.spottedStar.name != 'empty') self.stars[this.spottedStar.name].state = "free";
+					// бросаю наименьшую
+					if (this.smallestStar.name != 'empty' && Object.keys(this.haveStar).length == 2) this.trowStar();
 					star.state = "spotted";
 					this.spottedStar = star;
 					this.newPurpose('scan', star.position.x, star.position.y)
 					star.owner = this.name;
-					console.log("spotted star" + star.name);
+					this.say("Плыву к звезде " + star.value);
 				}
 			}
 		}
 
 		this.compensation = function()
 		{
-
+			this.say("Компенсирую кислород");
 		}
 
 		this.renderOxygen = function(ctx, x, y)
@@ -302,6 +325,17 @@ function backgroundUnit()
 			ctx.stroke();
 		}
 
+		this.renderStars = function()
+		{
+			var i = 0;
+			for (var s in this.haveStar)
+			{
+				this.haveStar[s].position.y = this.position.y + (++i * 5);
+				this.haveStar[s].position.x = this.position.x + (++i * 5);
+				this.haveStar[s].render(self.ctx);
+			}
+		}
+
 		this.render = function (ctx)
 		{
 			this.breathe();
@@ -309,18 +343,44 @@ function backgroundUnit()
 			this.checkPosition();
 			this.newPosition();
 			this.renderOxygen(ctx, this.position.x, this.position.y - 2, .5);
-
 			ctx.drawImage(this.img, this.position.x, this.position.y);
+			this.renderStars();
 		}
 
 		this.pickupStar = function(){
-			console.log('pickup star');
-			delete self.stars[this.spottedStar.name];
+			this.say('Подобрал звезду ' + this.spottedStar.value);
 			this.haveStar[this.spottedStar.name] = this.spottedStar;
+			this.setSmallestStar();
+			delete self.stars[this.spottedStar.name];
 			delete this.spottedStar;
+
+			if (this.smallestStar.value == 10 && Object.keys(this.haveStar).length == 2)
+			{
+				this.say('Собрал хорошие звезды :) Возвращаюсь на корабль!');
+				this.newPurpose('ascent', 586, Math.round(this.position.y));
+			}
+
 			this.spottedStar = {name:'empty', value:0};
 		}
-		this.trowStar = function(){}
+
+		this.setSmallestStar = function()
+		{
+			this.smallestStar = {name:'empty', value:10};
+			for(var hs in this.haveStar)
+			{
+				if (this.haveStar[hs].value < this.smallestStar.value) this.smallestStar = this.haveStar[hs];
+			}
+		}
+
+		this.trowStar = function(){
+			this.say("Бросаю звезду " + this.smallestStar.value);
+			self.stars[this.smallestStar.name] = this.haveStar[this.smallestStar.name];
+			self.stars[this.smallestStar.name].state = 'free';
+			self.stars[this.smallestStar.name].position.y -= 50;
+			self.stars[this.smallestStar.name].direction = "d";
+			delete this.haveStar[this.smallestStar.name];
+			this.setSmallestStar();
+		}
 	}
 
 	this.fishXY = function(iterator, vx, vy, w, h)
@@ -333,14 +393,8 @@ function backgroundUnit()
 
 	this.renderBackground = function(iterator)
 	{
-		if (!this.rendered) return;
-		this.rendered = false;
-
 		var w = this.ctx.canvas.width;
 		var h = this.ctx.canvas.height;
-
-		this.ctx.clearRect(0, 0, w, h);
-		this.ctx.save();
 
 		var waveDelta = Math.abs(iterator/2 % 25);
 		this.ctx.drawImage(this.images.wave1, waveDelta - 25, 66);
@@ -381,7 +435,17 @@ function backgroundUnit()
 		this.buffer['fish5'] = fp.x;
 
 		this.ctx.drawImage(this.images.tros, 592, 64);
+	}
 
+	this.renderGame = function(iterator)
+	{
+		if (!this.rendered) return;
+		this.rendered = false;
+
+		this.ctx.clearRect(0, 0, this.ctx.canvas.width, this.ctx.canvas.height);
+		this.ctx.save();
+		
+		//this.renderBackground(iterator);
 
 		for( var s in this.stars)
 		{
@@ -392,7 +456,7 @@ function backgroundUnit()
 		{
 			this.divers[d].render(this.ctx);
 		}
-		this.ctx.restore
+		this.ctx.restore();
 		this.rendered = true;
 	}
 }
