@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html>
 <head>
-<title>TF diver</title>
+<title>Помоги TopFace собрать оценки</title>
 <meta http-equiv="X-UA-Compatible" content="IE=edge" />
 <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
 <link rel="stylesheet" type="text/css" href="main.css" />
@@ -15,36 +15,19 @@
 	var bgu = new backgroundUnit();
 window.onload = function()
 {
-
-
-
 	bgu.init();
-
-	var gameField = document.getElementById("gameCanvas");
-	gameField.onclick = function(e){
-		var base = document.getElementById("main");
-		var x = document.body.scrollLeft + e.clientX - base.offsetLeft - this.offsetLeft;
-		var y = document.body.scrollTop + e.clientY - base.offsetTop - this.offsetTop;
-		//console.log(x + " " + y);
-		bgu.addStar(x, y);
-	}
 
 	document.getElementById("addDiver").onclick = function(e){
 		bgu.addDiver();
 	}
-
-
-
-
-
-
-
 }
 </script>
 <div id="main">
-	<div id="tools"><button id="addDiver">добавить водолаза</button> удалить водолаза</div>
+	<div id="tools"><div class="gamename">Помоги TopFace собрать оценки</div><button id="addDiver"></button><button id="deleteDiver"></button></div>
 	<canvas id="backCanvas">Обновите браузер</canvas>
-	<div id="gameCanvas"></div>
 </div>
+	<div>
+	Информация
+	</div>
 </body>
 </html>
