@@ -276,7 +276,7 @@ function backgroundUnit()
 					this.oxygen -= (this.haveStar[i].value / 20);
 			}
 			// хватает ли нам кислорода?
-			if (this.oxygen < 5000 && this.state != 'ascent')
+			if (this.oxygen < 15000 && this.state != 'ascent')
 			{
 				this.say('Кончается кислород... Возвращаюсь на корабль');
 				this.newPurpose('ascent', 586, Math.round(this.position.y));
@@ -406,6 +406,20 @@ function backgroundUnit()
 		this.ctx.drawImage(this.images.cloud, cloudIterator/1.3 % (w + 100) - 75, 8);
 		this.ctx.drawImage(this.images.clouds, cloudIterator/1.2 % (w + 75) - 75, 15);
 		this.ctx.drawImage(this.images.clouds8, cloudIterator % (w + 75) - 75, 25);
+
+		var ts = 0;
+		var values = [];
+		for(var s in self.foundStars)
+		{
+			self.foundStars[s].position.x = 510 + self.foundStars[s].value * 12;
+			self.foundStars[s].position.y = 30 + Math.abs(iterator/4 % 4 - 2) - (self.foundStars[s].value * 2) % 10 + Math.random() * 2;
+			if (values.indexOf(self.foundStars[s].value) == -1)
+			{
+				self.foundStars[s].render(this.ctx);
+				values.push(self.foundStars[s].value);
+			}
+		}
+
 		this.ctx.drawImage(this.images.shipEmpty, 512, Math.abs(iterator/4 % 4 - 2));
 		this.ctx.drawImage(this.images.wave3, waveDelta - 25, 94);
 
@@ -445,7 +459,7 @@ function backgroundUnit()
 		this.ctx.clearRect(0, 0, this.ctx.canvas.width, this.ctx.canvas.height);
 		this.ctx.save();
 		
-		//this.renderBackground(iterator);
+		this.renderBackground(iterator);
 
 		for( var s in this.stars)
 		{
