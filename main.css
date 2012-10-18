@@ -3,13 +3,12 @@
     Created on : 08.10.2012, 19:21:51
     Author     : Eugene Smith <easmith@mail.ru>
 */
-
-
 root { 
     display: block;
 }
 
 #main {
+	position:relative;
 	width: 760px;
 	height: 685px;
 	margin: 10px auto;
@@ -28,7 +27,7 @@ root {
 
 .gamename {
 	vertical-align: top;
-	font-family: Tahoma;
+	font-family: Tahoma, Arial;
 	font-size: 22px;
 	color: white;
 	padding:8px;
@@ -52,18 +51,6 @@ root {
 	-webkit-box-shadow:  0px 0px 10px 0px rgba(0, 0, 0, 0.5);
     box-shadow:  0px 0px 10px 0px rgba(0, 0, 0, 0.5);
 	background: url('images/back-clear.jpg');
-}
-
-#gameCanvas {
-	top: 170px;
-	width: 716px;
-	height: 491px;
-	left: 0px;
-	position: absolute;
-	border: 1px solid yellow;
-	margin: 0px 20px 20px 20px;
-	-webkit-border-radius: 20px;
-	border-radius: 20px;
 }
 
 #addDiver {

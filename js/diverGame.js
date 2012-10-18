@@ -1,27 +1,41 @@
-function backgroundUnit()
+function diverGame()
 {
 	var self = this;
 	this.ctx = null;
 	this.rendered = true;
 	this.iterator = 0;
+	this.intervalId = 1;
+	this.paused = true;
 	
 	this.init = function()
 	{
 		var backCanvas = document.getElementById("backCanvas");
 		backCanvas.onclick = function(e){
 			var base = document.getElementById("main");
-			var x = document.body.scrollLeft + e.clientX - base.offsetLeft - this.offsetLeft;
-			var y = document.body.scrollTop + e.clientY - base.offsetTop - this.offsetTop;
-			//console.log(x + " " + y);
-			self.addStar(x, y);
+			var x = document.documentElement.scrollLeft + e.clientX - base.offsetLeft - this.offsetLeft;
+			var y = document.documentElement.scrollTop + e.clientY - base.offsetTop - this.offsetTop;
+			if (y < 100 || y > 560) return;
+			self.addStar(x > 33 ? (x > this.width - 23 ? x - 66 : x - 33) : x, y - 23);
 		}
 		this.ctx = backCanvas.getContext('2d');  // Контекст холста
 		this.ctx.canvas.width = 720;
 		this.ctx.canvas.height = 600;
-		var self = this;
-		setInterval(function(){
+		this.play();
+	}
+
+	this.play = function()
+	{
+		if (!this.paused) return;
+		this.paused = false;
+		this.intervalId = setInterval(function(){
 			self.renderGame(self.iterator++)
-		}, 25);
+		}, 50);
+	}
+
+	this.pause = function()
+	{
+		clearInterval(this.intervalId);
+		this.paused = true;
 	}
 
 	var newImage = function (path) {
@@ -88,7 +102,7 @@ function backgroundUnit()
 	this.addStar = function(x, y)
 	{
 		var countStars = Object.keys(this.stars).length;
-		if (countStars < 50)
+		if (countStars < 100)
 			this.stars['star' + this.iterator] = new this.star(x, y, 'star' + this.iterator);
 	}
 
@@ -97,7 +111,7 @@ function backgroundUnit()
 		this.direction = 'd'; // d, w (wait)
 		this.state = 'free';// free, owned, spotted
 		this.position = {'x' : x, 'y' : y};
-		this.value = Math.round(Math.random() * 10);
+		this.value = Math.round(Math.random() * 9) + 1;
 		this.img = self.images['star' + this.value];
 
 		this.newPosition = function()
@@ -115,7 +129,7 @@ function backgroundUnit()
 			try {
 				if (typeof( this.position) != 'object') return;
 				this.newPosition();
-				ctx.drawImage(this.img,	this.position.x, this.position.y);
+				ctx.drawImage(this.img,	Math.round(this.position.x), Math.round(this.position.y));
 			}catch(e){}
 		}
 	}
@@ -140,21 +154,21 @@ function backgroundUnit()
 				case 'l': { this.img = self.images.diverleft; break; }
 				case 'r': { this.img = self.images.diverright; break; }
 				case 'u': {
-						this.img = self.images.diverup;
-						this.position.x = Math.round(this.position.x);
-						this.position.y = Math.round(this.position.y);
-						break; }
+					this.img = self.images.diverup;
+					this.position.x = Math.round(this.position.x);
+					this.position.y = Math.round(this.position.y);
+					break; }
 				default:
 					break;
 			}
 			this.direction = direction;
 		}
 
-		this.checkDirection = function ()
+		this.checkDirection = function (w,h)
 		{
 			if (['l','r'].indexOf(this.direction) != -1)
 			{
-				if (this.position.y != this.purpose.y)
+				if (Math.round(this.position.y) != Math.round(this.purpose.y))
 				{
 					var delta = this.purpose.y - this.position.y;
 					this.position.y += 0.2*Math.abs(delta)/(delta);
@@ -175,13 +189,13 @@ function backgroundUnit()
 					break;
 				}
 				case 'l': {
-					if (this.position.x > -1) { this.position.x -= 1; }
-					else { this.newPurpose('scan', w - 62, 490) }
+					if (this.position.x > -1 || this.spottedStar.name != 'empty') { this.position.x -= 1; }
+					else if (this.state == 'scan'){ this.newPurpose('scan', w - 65, 490) }
 					break;
 				}
 				case 'r': {
-					if (this.position.x < w - 63) { this.position.x += 1; }
-					else { this.newPurpose('scan', -1, 490) }
+					if (this.position.x < w - 64 || this.spottedStar.name != 'empty') { this.position.x += 1; }
+					else if (this.state == 'scan'){ this.newPurpose('scan', -1, 490) }
 					break;
 				}
 				case 'u': {
@@ -196,7 +210,7 @@ function backgroundUnit()
 					break;
 				}
 			}
-			this.checkDirection();
+			this.checkDirection(w,h);
 		}
 
 		this.newPurpose = function(state, x, y)
@@ -250,14 +264,15 @@ function backgroundUnit()
 		{
 			if (this.direction == "z")
 			{
-				this.oxygen += 3000/50;
+				if (Object.keys(this.haveStar).length != 0)
+				{
+					for (var s in this.haveStar) self.foundStars[s] = this.haveStar[s];
+					this.haveStar = {};
+				}
+				
+				this.oxygen += 3000/20;
 				if (this.oxygen > 20000)
 				{
-					for (var s in this.haveStar)
-					{
-						self.foundStars[s] = this.haveStar[s];
-					}
-					this.haveStar = {};
 					this.setSmallestStar();
 					this.oxygen = 20000;
 					this.changeDirection('d');
@@ -266,11 +281,9 @@ function backgroundUnit()
 			}
 			else
 			{
-				// за себя
+				// за себя и за каждую звезду
 				this.oxygen -= (50 / 20);
-				// и за каждую звезду
-				for( var i in this.haveStar)
-					this.oxygen -= (this.haveStar[i].value / 20);
+				for(var i in this.haveStar) this.oxygen -= (this.haveStar[i].value / 20);
 			}
 			// хватает ли нам кислорода?
 			if (this.oxygen < 15000 && this.state != 'ascent')
@@ -306,7 +319,9 @@ function backgroundUnit()
 
 		this.compensation = function()
 		{
-			this.say("Компенсирую кислород");
+			this.say("Заправляю компенсатор плавучести");
+			for(var s in this.haveStar) this.oxygen -= this.haveStar[s].value * 50;
+			this.oxygen -= 50;
 		}
 
 		this.renderOxygen = function(ctx, x, y)
@@ -329,7 +344,7 @@ function backgroundUnit()
 			for (var s in this.haveStar)
 			{
 				this.haveStar[s].position.y = this.position.y + (++i * 5);
-				this.haveStar[s].position.x = this.position.x + (++i * 5);
+				this.haveStar[s].position.x = this.position.x + (['l', 'u'].indexOf(this.direction)==-1?-1:1)*(++i*5) ;
 				this.haveStar[s].render(self.ctx);
 			}
 		}
@@ -341,8 +356,8 @@ function backgroundUnit()
 			this.checkPosition(ctx.canvas.width, ctx.canvas.height);
 			this.newPosition(ctx.canvas.width, ctx.canvas.height);
 
-			this.renderOxygen(ctx, this.position.x, this.position.y - 2, .5);
-			ctx.drawImage(this.img, this.position.x, this.position.y);
+			this.renderOxygen(ctx, Math.round(this.position.x), Math.round(this.position.y) - 2, .5);
+			ctx.drawImage(this.img, Math.round(this.position.x), Math.round(this.position.y));
 			this.renderStars();
 		}
 
@@ -356,10 +371,8 @@ function backgroundUnit()
 			if (this.smallestStar.value == 10 && Object.keys(this.haveStar).length == 2)
 			{
 				this.say('Собрал хорошие звезды :) Возвращаюсь на корабль!');
-				this.newPurpose('ascent', 586, Math.round(this.position.y));
-			}
-			this.purpose.x = -1;
-			this.purpose.y = 500;
+				this.newPurpose('ascent', 620, 490);
+			}else{this.newPurpose('scan', -1, 490)}
 			this.spottedStar = {name:'empty', value:0};
 		}
 
@@ -386,8 +399,8 @@ function backgroundUnit()
 	this.fishXY = function(iterator, vx, vy, w, h)
 	{
 		return {
-			x : Math.abs(iterator*vx % (w + 100) * 2 - (w + 100)) - 100,
-			y : Math.abs(iterator*vy % (h - 320) * 2 - (h - 320)) + 200
+			x : Math.round(Math.abs(iterator*vx % (w + 100) * 2 - (w + 100))) - 100,
+			y : Math.round(Math.abs(iterator*vy % (h - 270) * 2 - (h - 270))) + 150
 		}
 	}
 
@@ -396,16 +409,16 @@ function backgroundUnit()
 		var w = this.ctx.canvas.width;
 		var h = this.ctx.canvas.height;
 
-		var waveDelta = Math.abs(iterator/2 % 25);
+		var waveDelta = Math.round(Math.abs(iterator/2 % 25));
 		this.ctx.drawImage(this.images.wave1, waveDelta - 25, 66);
 		this.ctx.drawImage(this.images.wave2, -waveDelta, 80);
 
 		var cloudIterator = iterator + 1000;
-		this.ctx.drawImage(this.images.cloudss, cloudIterator/1.6 % (w + 150) - 75, 0);
-		this.ctx.drawImage(this.images.clouds, cloudIterator/1.4 % (w + 100) - 75, 5);
-		this.ctx.drawImage(this.images.cloud, cloudIterator/1.3 % (w + 100) - 75, 8);
-		this.ctx.drawImage(this.images.clouds, cloudIterator/1.2 % (w + 75) - 75, 15);
-		this.ctx.drawImage(this.images.clouds8, cloudIterator % (w + 75) - 75, 25);
+		this.ctx.drawImage(this.images.cloudss, Math.round(cloudIterator/1.6 % (w + 150)) - 75, 0);
+		this.ctx.drawImage(this.images.clouds, Math.round(cloudIterator/1.4 % (w + 100)) - 75, 5);
+		this.ctx.drawImage(this.images.cloud, Math.round(cloudIterator/1.3 % (w + 100)) - 75, 8);
+		this.ctx.drawImage(this.images.clouds, Math.round(cloudIterator/1.2 % (w + 75)) - 75, 15);
+		this.ctx.drawImage(this.images.clouds8, Math.round(cloudIterator % (w + 75)) - 75, 25);
 
 		var ts = 0;
 		var values = [];
@@ -420,7 +433,7 @@ function backgroundUnit()
 			}
 		}
 
-		this.ctx.drawImage(this.images.shipEmpty, 512, Math.abs(iterator/4 % 4 - 2));
+		this.ctx.drawImage(this.images.shipEmpty, 512, Math.round(Math.abs(iterator/5 % 4 - 2)));
 		this.ctx.drawImage(this.images.wave3, waveDelta - 25, 94);
 
 		// fp - Fish Position - Координаты рыбы
@@ -444,7 +457,7 @@ function backgroundUnit()
 		this.ctx.drawImage(this.buffer['fish4'] > fp.x ? this.images.fishes75x100 : this.images.fishes75x100r, fp.x, fp.y);
 		this.buffer['fish4'] = fp.x;
 
-		fp = this.fishXY(iterator + 1500, .2, .1, w, h);
+		fp = this.fishXY(iterator + 1500, .5, .2, w, h);
 		this.ctx.drawImage(this.buffer['fish5'] > fp.x ? this.images.fishes2 : this.images.fishes2r, fp.x, fp.y);
 		this.buffer['fish5'] = fp.x;
 
@@ -455,7 +468,6 @@ function backgroundUnit()
 	{
 		if (!this.rendered) return;
 		this.rendered = false;
-
 		this.ctx.clearRect(0, 0, this.ctx.canvas.width, this.ctx.canvas.height);
 		this.ctx.save();
 		
@@ -470,8 +482,23 @@ function backgroundUnit()
 		{
 			this.divers[d].render(this.ctx);
 		}
+		
 		this.ctx.restore();
 		this.rendered = true;
+	}
+	
+	this.changeSize = function(w,h)
+	{
+		if (w < 720) w = 720;
+		if (w > 1440) w = 1440;
+		h = 600;
+		var backCanvas = document.getElementById("backCanvas");
+		var main = document.getElementById("main");
+		backCanvas.style.width = w + 'px';
+		main.style.width = (w + 40) + 'px';
+		this.ctx.canvas.width = w;
+		backCanvas.style.height = h + 'px';
+		this.ctx.canvas.height = h;
 	}
 }
 
