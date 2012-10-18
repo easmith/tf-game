@@ -8,9 +8,16 @@ function backgroundUnit()
 	this.init = function()
 	{
 		var backCanvas = document.getElementById("backCanvas");
+		backCanvas.onclick = function(e){
+			var base = document.getElementById("main");
+			var x = document.body.scrollLeft + e.clientX - base.offsetLeft - this.offsetLeft;
+			var y = document.body.scrollTop + e.clientY - base.offsetTop - this.offsetTop;
+			//console.log(x + " " + y);
+			self.addStar(x, y);
+		}
 		this.ctx = backCanvas.getContext('2d');  // Контекст холста
-		this.ctx.canvas.width = 716;
-		this.ctx.canvas.height = 597;
+		this.ctx.canvas.width = 720;
+		this.ctx.canvas.height = 600;
 		var self = this;
 		setInterval(function(){
 			self.renderGame(self.iterator++)
@@ -117,13 +124,13 @@ function backgroundUnit()
 		this.name = name;
 		this.direction = "d"; // d, u, l, r, z
 		this.state = "dive" // dive, scan, ascent
-		this.stops = {400:5, 280:10, 184:15};
+		this.stops = {380:5, 240:10, 184:15};
 		this.oxygen = 20000;
 		this.haveStar = {};
 		this.spottedStar = {name:'empty', value:0};
 		this.smallestStar = {name:'empty', value:0};
 		this.position = {x : 585, y : 80};
-		this.purpose = {x : 586, y : 520};
+		this.purpose = {x : 586, y : 490};
 		this.img = self.images.diverdown;
 
 		this.changeDirection = function(direction)
@@ -132,95 +139,85 @@ function backgroundUnit()
 				case 'd': { if (this.direction != "z") this.img = self.images.diverdown; break; }
 				case 'l': { this.img = self.images.diverleft; break; }
 				case 'r': { this.img = self.images.diverright; break; }
-				case 'u': { this.img = self.images.diverup; break; }
+				case 'u': {
+						this.img = self.images.diverup;
+						this.position.x = Math.round(this.position.x);
+						this.position.y = Math.round(this.position.y);
+						break; }
 				default:
 					break;
 			}
 			this.direction = direction;
 		}
 
-		this.newPosition = function()
+		this.checkDirection = function ()
+		{
+			if (['l','r'].indexOf(this.direction) != -1)
+			{
+				if (this.position.y != this.purpose.y)
+				{
+					var delta = this.purpose.y - this.position.y;
+					this.position.y += 0.2*Math.abs(delta)/(delta);
+				}
+				if (Math.abs(this.purpose.x - this.position.x) > 30)
+					this.changeDirection(this.purpose.x < Math.round(this.position.x) ? 'l' : 'r');
+			}
+		}
+
+		this.newPosition = function(w,h)
 		{
 			switch (this.direction) {
 				case 'd': {
-					if (this.position.y < 520) this.position.y += 1;
+					if (this.position.y < 490) this.position.y += 1;
 					if (this.position.y == 260) this.position.x += 1;
 					if (this.position.y >= 310 && this.position.y <= 460) this.position.x -= 17/155;
-					if (this.position.y > 460 && this.position.y < 520) this.position.x += 17/60;
+					if (this.position.y > 460 && this.position.y < 520) this.position.x += 17/30;
 					break;
 				}
-
 				case 'l': {
-					if (this.position.x > 3)
-					{
-						if (this.position.y != this.purpose.y)
-						{
-							var delta = this.purpose.y - this.position.y;
-							this.position.y += Math.abs(delta)/(delta);
-						}
-						this.position.x -= 1;
-					}
-					else
-					{
-						this.changeDirection('r');
-					}
+					if (this.position.x > -1) { this.position.x -= 1; }
+					else { this.newPurpose('scan', w - 62, 490) }
 					break;
 				}
-
 				case 'r': {
-					if (this.position.x < 630)
-					{
-						if (this.position.y != this.purpose.y)
-						{
-							var delta = this.purpose.y - this.position.y;
-							this.position.y += Math.abs(delta)/(delta);
-						}
-						this.position.x += 1;
-					}
-					else
-					{
-						this.changeDirection('l');
-					}
+					if (this.position.x < w - 63) { this.position.x += 1; }
+					else { this.newPurpose('scan', -1, 490) }
 					break;
 				}
-
 				case 'u': {
-					// остановки чтобы передохнуть =)
-//					if (this.stops[this.position.y] && this.stops[this.position.y] > 0) {
-//						this.stops[this.position.y] -= .05;
-//						break;
-//					}
-					if (this.position.y == 520) this.position.x += 35;
+					if (this.stops[this.position.y] && this.stops[this.position.y] > 0) {
+						this.stops[this.position.y] -= .05;
+						break;
+					}
 					if (this.position.y > 80) this.position.y -= 1;
-					if (this.position.y > 460 && this.position.y < 520) this.position.x -= 17/60;
+					if (this.position.y > 460 && this.position.y < 520) this.position.x -= 17/30;
 					if (this.position.y >= 310 && this.position.y <= 460) this.position.x += 17/155;
 					if (this.position.y == 260) this.position.x -= 1;
 					break;
 				}
 			}
+			this.checkDirection();
 		}
 
 		this.newPurpose = function(state, x, y)
 		{
+			this.position.x = Math.round(this.position.x);
+			this.position.y = Math.round(this.position.y);
 			this.state = state;
 			this.purpose.x = x;
 			this.purpose.y = y;
-			if(this.direction == "l" || this.direction == "r")
-			{
-				this.changeDirection(this.purpose.x < this.position.x ? 'l' : 'r');
-			}
-
+			this.checkDirection();
 		}
 
-		this.checkPosition = function()
+		this.checkPosition = function(w,h)
 		{
 			if (Math.round(this.purpose.x) != Math.round(this.position.x) || Math.round(this.purpose.y) != Math.round(this.position.y)) return;
 			
 			switch (this.state)
 			{
 				case 'dive': {
-					this.state = 'scan';
-					this.changeDirection(Math.random() > .5 ? "l" : "r");
+					this.changeDirection('l');
+					Math.random() > .5 ? this.newPurpose('scan', w - 62, 490) : this.newPurpose('scan', -1, 490);
 					break;
 				}
 				case 'scan': {
@@ -229,7 +226,7 @@ function backgroundUnit()
 					break;
 				}
 				case 'ascent': {
-					this.newPurpose('ascent', 620, 80)
+					this.newPurpose('ascent', 619, 80)
 					if (Math.round(this.position.y) != 80)
 					{
 						this.compensation();
@@ -264,7 +261,7 @@ function backgroundUnit()
 					this.setSmallestStar();
 					this.oxygen = 20000;
 					this.changeDirection('d');
-					this.newPurpose('dive', this.position.x + 1, 520);
+					this.newPurpose('dive', this.position.x + 1, 490);
 				}
 			}
 			else
@@ -279,11 +276,12 @@ function backgroundUnit()
 			if (this.oxygen < 15000 && this.state != 'ascent')
 			{
 				this.say('Кончается кислород... Возвращаюсь на корабль');
-				this.newPurpose('ascent', 586, Math.round(this.position.y));
+				if (this.spottedStar.name != 'empty') self.stars[this.spottedStar.name].state = "free";
+				this.newPurpose('ascent', 620, 490);
 			}
 		}
 
-		this.scan = function(){
+		this.scan = function(w,h){
 			for (var i in self.stars)
 			{
 				var star = self.stars[i];
@@ -291,7 +289,7 @@ function backgroundUnit()
 					&& star.direction == "w"
 					&& this.spottedStar.value < star.value
 					&& (this.smallestStar.name == 'empty' || (this.smallestStar.value < star.value || Object.keys(this.haveStar).length < 2))
-					&& Math.abs(star.position.x - this.position.x) < 260)
+					&& Math.abs(star.position.x - this.position.x) < w/3)
 				{
 					// Освобождаю звезду
 					if (this.spottedStar.name != 'empty') self.stars[this.spottedStar.name].state = "free";
@@ -339,9 +337,10 @@ function backgroundUnit()
 		this.render = function (ctx)
 		{
 			this.breathe();
-			if( this.state == 'scan') this.scan();
-			this.checkPosition();
-			this.newPosition();
+			if( this.state == 'scan') this.scan(ctx.canvas.width, ctx.canvas.height);
+			this.checkPosition(ctx.canvas.width, ctx.canvas.height);
+			this.newPosition(ctx.canvas.width, ctx.canvas.height);
+
 			this.renderOxygen(ctx, this.position.x, this.position.y - 2, .5);
 			ctx.drawImage(this.img, this.position.x, this.position.y);
 			this.renderStars();
@@ -359,7 +358,8 @@ function backgroundUnit()
 				this.say('Собрал хорошие звезды :) Возвращаюсь на корабль!');
 				this.newPurpose('ascent', 586, Math.round(this.position.y));
 			}
-
+			this.purpose.x = -1;
+			this.purpose.y = 500;
 			this.spottedStar = {name:'empty', value:0};
 		}
 
@@ -376,7 +376,7 @@ function backgroundUnit()
 			this.say("Бросаю звезду " + this.smallestStar.value);
 			self.stars[this.smallestStar.name] = this.haveStar[this.smallestStar.name];
 			self.stars[this.smallestStar.name].state = 'free';
-			self.stars[this.smallestStar.name].position.y -= 50;
+			self.stars[this.smallestStar.name].position.y -= 0;
 			self.stars[this.smallestStar.name].direction = "d";
 			delete this.haveStar[this.smallestStar.name];
 			this.setSmallestStar();
