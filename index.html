@@ -15,18 +15,45 @@ window.onload = function()
 	dg.init();
 	document.getElementById("addDiver").onclick = function(e){dg.addDiver()};
 	document.getElementById("deleteDiver").onclick = function(e){dg.addDiver()};
+
 	document.getElementById("pause").onclick = function(e){dg.pause()};
 	document.getElementById("play").onclick = function(e){dg.play()};
+/*	document.getElementById("diverRadioHeader").onclick = function(e){
+		if (document.getElementById("diverRadio").style.display && document.getElementById("diverRadio").style.display != 'none'){
+			document.getElementById("diverRadio").style.display = 'none';
+			document.getElementById("diverRadio").innerHTML = "Начинаем слушать радиосвязь =)";
+		}
+		else{
+			document.getElementById("diverRadio").style.display = 'block';
+		}
+	};
+
+	document.getElementById("statisticHeader").onclick = function(e){ dg.getStatistic('statistic');	};
+*/
 }
+
 </script>
 <div id="main">
-	<div id="tools"><div class="gamename">Помоги TopFace собрать оценки</div><button id="addDiver"></button><button id="deleteDiver"></button></div>
+	<div id="tools"><div class="gamename">Помоги TopFace собрать оценки</div><button id="deleteDiver"></button><button id="addDiver"></button></div>
 	<canvas id="backCanvas">Обновите браузер</canvas>
 </div>
-	<div>
-		<button id="pause">Pause</button>
-		<button id="play">Play</button>
-	Информация
-	</div>
+<div class="information">
+	<h3>Информация</h3>
+	<p>
+	Игру можно приостановить или продолжить, нажав на соответствующие кнопки:
+	<button id="pause">Pause</button>
+	<button id="play">Play</button>
+	</p>
+	
+	<fieldset>
+		<legend id="diverRadioHeader">Радиосвязь дайверов (кликните, чтобы скрыть или показать):</legend>
+		<div id="diverRadio">Начинаем слушать радиосвязь =)</div>
+	</fieldset>
+
+	<fieldset>
+		<legend id="statisticHeader">Статистика (кликните, чтобы обновить):</legend>
+		<div id="statistic"></div>
+	</fieldset>
+</div>
 </body>
 </html>

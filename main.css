@@ -7,6 +7,11 @@ root {
     display: block;
 }
 
+* {
+	font-family: Tahoma, Arial;
+	font-size: 14px;
+}
+
 #main {
 	position:relative;
 	width: 760px;
@@ -27,7 +32,6 @@ root {
 
 .gamename {
 	vertical-align: top;
-	font-family: Tahoma, Arial;
 	font-size: 22px;
 	color: white;
 	padding:8px;
@@ -74,4 +78,22 @@ root {
 #deleteDiver:hover {
 	cursor:pointer;
 	background-position:0 -32px;
+}
+
+.information {
+	margin: 0 auto;
+	width: 720px;
+}
+
+#diverRadio{
+	display: none;
+	width: 720px;
+	height: 200px;
+	overflow: scroll;
+}
+
+legend {
+	text-decoration: underline;
+	color: blue;
+	cursor: pointer;
 }
