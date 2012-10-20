@@ -47,6 +47,7 @@ root {
 }
 
 #backCanvas {
+	cursor:pointer;
 	width: 720px;
 	height: 600px;
 	margin: 0px 20px 20px 20px;
