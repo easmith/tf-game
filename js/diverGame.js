@@ -1,11 +1,14 @@
 function diverGame()
 {
 	var self = this;
+	this.date = new Date();
+	this.fps = 20;
 	this.ctx = null;
 	this.rendered = true;
 	this.iterator = 0;
 	this.intervalId = 1;
 	this.paused = true;
+	this.compressorUser = null;
 	
 	this.init = function()
 	{
@@ -25,11 +28,12 @@ function diverGame()
 
 	this.play = function()
 	{
+		this.date = new Date();
 		if (!this.paused) return;
 		this.paused = false;
 		this.intervalId = setInterval(function(){
 			self.renderGame(self.iterator++)
-		}, 50);
+		}, 10);
 	}
 
 	this.pause = function()
@@ -86,6 +90,8 @@ function diverGame()
 		star9: newImage('images/tf-star9.png'),
 		star10: newImage('images/tf-star10.png'),
 
+		thought: newImage('images/thought.png'),
+
 		tros : newImage('images/tros.png')
 	}
 
@@ -97,6 +103,19 @@ function diverGame()
 	this.addDiver = function()
 	{
 		this.divers['Diver' + this.iterator] = new this.diver('Diver' + this.iterator);
+	}
+
+	this.deleteDiver = function()
+	{
+		for (var d in this.divers)
+		{
+			if (this.divers[d].state == 'zapravka')
+			{
+				if (this.compressorUser == this.divers[d].name) this.compressorUser = null;
+				delete this.divers[d];
+				break;
+			}
+		}
 	}
 
 	this.addStar = function(x, y)
@@ -117,7 +136,7 @@ function diverGame()
 		this.newPosition = function()
 		{
 			if (this.position.y > 515) { this.direction = 'w'; this.position.y += Math.round(Math.random() * 10); }
-			this.position.y += 4;
+			this.position.y += 4*20/self.fps;
 		}
 
 		this.render = function (ctx)
@@ -138,6 +157,7 @@ function diverGame()
 		this.smallestStar = {name:'empty', value:0};
 		this.position = {x : 585, y : 80};
 		this.purpose = {x : 586, y : 490};
+		this.thoughtCloud = false;
 		this.img = self.images.diverdown;
 
 		this.changeDirection = function(direction)
@@ -174,19 +194,19 @@ function diverGame()
 			switch (this.direction) {
 				case 'dl': {}
 				case 'dr': {
-					if (this.position.y < 490) this.position.y += 1;
-					if (this.position.y == 260) this.position.x += 1;
-					if (this.position.y >= 310 && this.position.y <= 460) this.position.x -= 17/155;
-					if (this.position.y > 460 && this.position.y < 520) this.position.x += 17/30;
+					if (this.position.y < 490) this.position.y += 1*20/self.fps;
+					if (this.position.y == 260) this.position.x += 1*20/self.fps;
+					if (this.position.y >= 310 && this.position.y <= 460) this.position.x -= 17/155*20/self.fps;
+					if (this.position.y > 460 && this.position.y < 520) this.position.x += 17/30*20/self.fps;
 					break;
 				}
 				case 'l': {
-					if (this.position.x > -1 || this.spottedStar.name != 'empty') { this.position.x -= 1; }
+					if (this.position.x > -1 || this.spottedStar.name != 'empty') { this.position.x -= 1*20/self.fps; }
 					else if (this.state == 'scan'){ this.newPurpose('scan', w - 65, 490) }
 					break;
 				}
 				case 'r': {
-					if (this.position.x < w - 64 || this.spottedStar.name != 'empty') { this.position.x += 1; }
+					if (this.position.x < w - 64 || this.spottedStar.name != 'empty') { this.position.x += 1*20/self.fps; }
 					else if (this.state == 'scan'){ this.newPurpose('scan', -1, 490) }
 					break;
 				}
@@ -194,15 +214,18 @@ function diverGame()
 				case 'ur': {
 					if (this.stops[Math.round(this.position.y)] && this.stops[Math.round(this.position.y)] > 0) {
 						this.stops[Math.round(this.position.y)] -= .05;
+						this.thoughtCloud = true;
 						break;
 					}
-					if (this.position.y > 80) this.position.y -= 1;
-					if (this.position.y > 460 && this.position.y < 520) this.position.x -= 17/30;
-					if (this.position.y >= 310 && this.position.y <= 460) this.position.x += 17/155;
-					if (this.position.y == 260) this.position.x -= 1;
+					this.thoughtCloud = false;
+					if (this.position.y > 80) this.position.y -= 1*20/self.fps;
+					if (this.position.y > 460 && this.position.y < 520) this.position.x -= 17/30*20/self.fps;
+					if (this.position.y >= 310 && this.position.y <= 460) this.position.x += 17/155*20/self.fps;
+					if (this.position.y == 260) this.position.x -= 1*20/self.fps;
 					break;
 				}
 			}
+
 			this.checkDirection(w,h);
 		}
 
@@ -218,7 +241,9 @@ function diverGame()
 
 		this.checkPosition = function(w,h)
 		{
-			if (Math.round(this.purpose.x) != Math.round(this.position.x) || Math.round(this.purpose.y) != Math.round(this.position.y)) return;
+			if (
+				Math.abs(this.purpose.x - this.position.x) > 2 ||
+				Math.abs(this.purpose.y - this.position.y) > 2) return;
 			
 			switch (this.state)
 			{
@@ -233,9 +258,10 @@ function diverGame()
 					break;
 				}
 				case 'ascent': {
-					if (Math.round(this.position.y) != 80)
+					if (Math.abs(this.position.y-80) > 2)
 					{
-						var dir = Math.round(this.position.x) == 620 ? 'ur' : 'ul';
+						this.position.x = Math.abs(this.position.x - 620) < 2 ? 620 : 585;
+						var dir = Math.abs(this.position.x - 620) < 2 ? 'ur' : 'ul';
 						this.newPurpose('ascent', dir=='ur'?620:585, 80)
 						this.changeDirection(dir);
 						this.compensation();
@@ -266,10 +292,12 @@ function diverGame()
 					for (var s in this.haveStar) self.foundStars[s] = this.haveStar[s];
 					this.haveStar = {};
 				}
-				
-				this.oxygen += 3000/20;
+
+				if (!self.compressorUser) {self.compressorUser = this.name; this.position.y -= 2; };
+				if (self.compressorUser == this.name) this.oxygen += 3000/self.fps;
 				if (this.oxygen > 20000)
 				{
+					self.compressorUser = null;
 					this.say("Заправил кислородные балоны, спускаюсь на дно...");
 					this.setSmallestStar();
 					this.oxygen = 20000;
@@ -280,10 +308,11 @@ function diverGame()
 			else
 			{
 				// за себя и за каждую звезду
-				this.oxygen -= (50 / 20);
-				for(var i in this.haveStar) this.oxygen -= (this.haveStar[i].value / 20);
+				this.oxygen -= (50 / self.fps);
+				for(var i in this.haveStar) this.oxygen -= (this.haveStar[i].value / self.fps);
 				// хватает ли нам кислорода?
-				if (this.oxygen < 18000 && this.state != 'ascent')
+				// (20 + 50)*30 + 550 (и +200 по технике безопасности :))
+				if (this.oxygen < 3200 && this.state != 'ascent')
 				{
 					this.say('Кончается кислород... Возвращаюсь на корабль');
 					if (this.spottedStar.name != 'empty') self.stars[this.spottedStar.name].state = "free";
@@ -329,7 +358,7 @@ function diverGame()
 			ctx.fillStyle = "rgb(0, 63, 255)";
 			ctx.fillRect(0, 0, 52, 3);
 			ctx.fillStyle = "rgb(255, 255, 255)";
-			ctx.fillRect(1, 1, 50 * Math.round(this.oxygen / 20000), 1);
+			ctx.fillRect(1, 1, Math.round(50 * this.oxygen / 20000), 1);
 			ctx.stroke();
 		}
 
@@ -340,6 +369,7 @@ function diverGame()
 			{
 				this.haveStar[s].position.y = (++i * 5);
 				this.haveStar[s].position.x = (['l', 'u'].indexOf(this.direction)==-1?-1:1)*(++i*5) ;
+				if (['l', 'u'].indexOf(this.direction)) this.haveStar[s].position.x += 10;
 				this.haveStar[s].render(ctx);
 			}
 		}
@@ -353,13 +383,14 @@ function diverGame()
 				this.newPosition(ctx.canvas.width, ctx.canvas.height);
 
 				var canvas = document.createElement('canvas');
-				canvas.width = 66;
+				canvas.width = 76;
 				canvas.height = 76;
 				var context = canvas.getContext('2d');
 
 				this.renderOxygen(context, Math.round(this.position.x), Math.round(this.position.y) - 2, .5);
 				context.drawImage(this.img, 0, 3);
 				this.renderStars(context);
+				if (this.thoughtCloud) ctx.drawImage(self.images.thought, Math.round(this.position.x)-100, Math.round(this.position.y) - 50);
 				ctx.drawImage(canvas, Math.round(this.position.x), Math.round(this.position.y));
 			}catch(e){console.log(e)}
 		}
@@ -473,10 +504,10 @@ function diverGame()
 
 	this.renderGame = function(iterator)
 	{
-		if (!this.rendered) return;
+		if (!this.rendered) { return; }
 		this.rendered = false;
-		this.ctx.clearRect(0, 0, this.ctx.canvas.width, this.ctx.canvas.height);
-		this.ctx.save();
+		this.ctx.clearRect(0,0,720,600);
+//		this.ctx.save();
 		
 		this.renderBackground(iterator);
 		
@@ -484,7 +515,11 @@ function diverGame()
 		for(var s in this.stars) this.stars[s].render(this.ctx);
 		for(var d in this.divers) this.divers[d].render(this.ctx);
 		
-		this.ctx.restore();
+//		this.ctx.restore();
+		this.fps = Math.round(1000 / (new Date() - this.date))
+
+		document.getElementById('fps').innerHTML = this.fps;
+		this.date = new Date();
 		this.rendered = true;
 	}
 	

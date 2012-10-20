@@ -13,12 +13,13 @@ var dg = new diverGame();
 window.onload = function()
 {
 	dg.init();
-	document.getElementById("addDiver").onclick = function(e){dg.addDiver()};
-	document.getElementById("deleteDiver").onclick = function(e){dg.addDiver()};
+	document.getElementById("loading").style.display = "none";
+	document.getElementById("addDiver").onclick = function(e){dg.addDiver(); return false;};
+	document.getElementById("deleteDiver").onclick = function(e){dg.deleteDiver(); return false;};
 
 	document.getElementById("pause").onclick = function(e){dg.pause()};
 	document.getElementById("play").onclick = function(e){dg.play()};
-/*	document.getElementById("diverRadioHeader").onclick = function(e){
+	document.getElementById("diverRadioHeader").onclick = function(e){
 		if (document.getElementById("diverRadio").style.display && document.getElementById("diverRadio").style.display != 'none'){
 			document.getElementById("diverRadio").style.display = 'none';
 			document.getElementById("diverRadio").innerHTML = "Начинаем слушать радиосвязь =)";
@@ -29,8 +30,8 @@ window.onload = function()
 	};
 
 	document.getElementById("statisticHeader").onclick = function(e){ dg.getStatistic('statistic');	};
-*/
 }
+window.onbeforeunload  = function () {dg.pause()}
 
 </script>
 <div id="main">
@@ -39,6 +40,7 @@ window.onload = function()
 </div>
 <div class="information">
 	<h3>Информация</h3>
+	<p> Каждые 0.01 секунды пытаемся обновить холст. В итоге получается <span id='fps'>0</span> фреймов в секунду.</p>
 	<p>
 	Игру можно приостановить или продолжить, нажав на соответствующие кнопки:
 	<button id="pause">Pause</button>
@@ -55,5 +57,6 @@ window.onload = function()
 		<div id="statistic"></div>
 	</fieldset>
 </div>
+	<div id="loading"><h1>Загрузка...</h1></div>
 </body>
 </html>
