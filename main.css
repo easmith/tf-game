@@ -82,15 +82,14 @@ root {
 }
 
 .information {
-	margin: 0 auto;
+	margin: 100px auto;
 	width: 720px;
 }
 
 #diverRadio{
 	display: none;
-	width: 720px;
 	height: 200px;
-	overflow: scroll;
+	overflow: hidden;
 }
 
 legend {

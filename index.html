@@ -8,55 +8,35 @@
 <script language="javascript" src="js/diverGame.js" type="text/javascript"></script>
 </head>
 <body>
-<script type="text/javascript">
-var dg = new diverGame();
-window.onload = function()
-{
-	dg.init();
-	document.getElementById("loading").style.display = "none";
-	document.getElementById("addDiver").onclick = function(e){dg.addDiver(); return false;};
-	document.getElementById("deleteDiver").onclick = function(e){dg.deleteDiver(); return false;};
 
-	document.getElementById("pause").onclick = function(e){dg.pause()};
-	document.getElementById("play").onclick = function(e){dg.play()};
-	document.getElementById("diverRadioHeader").onclick = function(e){
-		if (document.getElementById("diverRadio").style.display && document.getElementById("diverRadio").style.display != 'none'){
-			document.getElementById("diverRadio").style.display = 'none';
-			document.getElementById("diverRadio").innerHTML = "Начинаем слушать радиосвязь =)";
-		}
-		else{
-			document.getElementById("diverRadio").style.display = 'block';
-		}
-	};
-
-	document.getElementById("statisticHeader").onclick = function(e){ dg.getStatistic('statistic');	};
-}
-window.onbeforeunload  = function () {dg.pause()}
-
-</script>
 <div id="main">
 	<div id="tools"><div class="gamename">Помоги TopFace собрать оценки</div><button id="deleteDiver"></button><button id="addDiver"></button></div>
 	<canvas id="backCanvas">Обновите браузер</canvas>
 </div>
+
 <div class="information">
 	<h3>Информация</h3>
-	<p> Каждые 0.01 секунды пытаемся обновить холст. В итоге получается <span id='fps'>0</span> фреймов в секунду.</p>
-	<p>
-	Игру можно приостановить или продолжить, нажав на соответствующие кнопки:
+	<p> Каждую сотую секунды пытаемся обновить холст. В итоге получается <span id='fps'>0</span> кадров в секунду.</p>
+	<p>	Игру можно приостановить или продолжить, нажав на соответствующие кнопки:
 	<button id="pause">Pause</button>
 	<button id="play">Play</button>
 	</p>
-	
-	<fieldset>
-		<legend id="diverRadioHeader">Радиосвязь дайверов (кликните, чтобы скрыть или показать):</legend>
-		<div id="diverRadio">Начинаем слушать радиосвязь =)</div>
-	</fieldset>
 
+	<p>	Дайверы собирают звезды по всей ширине холста. <br/> Ее можно произвольно изменить. Для примера 4 варианта:
+		<button onclick="dg.changeSize(720,600)">720px</button>
+		<button onclick="dg.changeSize(900,600)">900px</button>
+		<button onclick="dg.changeSize(1200,600)">1200px</button>
+		<button onclick="dg.changeSize(1440,600)">1400px</button>
+	</p>
 	<fieldset>
 		<legend id="statisticHeader">Статистика (кликните, чтобы обновить):</legend>
 		<div id="statistic"></div>
 	</fieldset>
+	<fieldset>
+		<legend id="diverRadioHeader">Радиосвязь дайверов (кликните, чтобы скрыть или показать):</legend>
+		<div id="diverRadio">Начинаем слушать радиосвязь =)</div>
+	</fieldset>
 </div>
-	<div id="loading"><h1>Загрузка...</h1></div>
+<div id="loading"><h1>Загрузка...</h1></div>
 </body>
 </html>

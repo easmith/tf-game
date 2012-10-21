@@ -1,18 +1,55 @@
+/**
+ * HTML5 canvas Game
+ *
+ * @author Eugene Smith <easmith@mail.ru>
+ */
+
+
+/**
+ * Функция-конструктор объекта Игры
+ */
 function diverGame()
 {
 	var self = this;
 	this.date = new Date();
 	this.fps = 20;
+	/**
+	 * Контекст холста
+	 */
 	this.ctx = null;
+
+	/**
+	 * Флаг отрисовки
+	 */
 	this.rendered = true;
+
+	/**
+	 * Счетчик для отрисовки фона
+	 */
 	this.iterator = 0;
+
+	/**
+	 * Id интервала обновления
+	 */
 	this.intervalId = 1;
+
+	/**
+	 * Флаг паузы игры
+	 */
 	this.paused = true;
+
+	/**
+	 * пользователь компрессора
+	 */
 	this.compressorUser = null;
-	
+
+	/**
+	 * Инизиализация игры
+	 */
 	this.init = function()
 	{
 		var backCanvas = document.getElementById("backCanvas");
+		// Событие mousedown юзабильнее click
 		backCanvas.onmousedown = function(e){
 			var base = document.getElementById("main");
 			var x = (document.documentElement.scrollLeft || document.body.scrollLeft) + e.clientX - base.offsetLeft - this.offsetLeft;
@@ -27,6 +64,9 @@ function diverGame()
 		this.play();
 	}
 
+	/**
+	 * Запуск игры
+	 */
 	this.play = function()
 	{
 		this.date = new Date();
@@ -37,20 +77,34 @@ function diverGame()
 		}, 10);
 	}
 
+	/**
+	 * Остановка игры
+	 */
 	this.pause = function()
 	{
 		clearInterval(this.intervalId);
 		this.paused = true;
 	}
 
+	/**
+	 * Вспомогательная функция для загрузки изображений
+	 *
+	 * @param  String path Путь к изображению
+	 */
 	var newImage = function (path) {
 		var image = new Image();
 		image.src = path;
 		return image;
 	}
 
+	/**
+	 * Буфер игры, для запоминания позиций
+	 */
 	this.buffer = {}
 
+	/**
+	 * Библиотека изображений
+	 */
 	this.images = {
 		wave1 : newImage('images/wave1.png'),
 		wave2 : newImage('images/wave2.png'),
@@ -96,37 +150,69 @@ function diverGame()
 		tros : newImage('images/tros.png')
 	}
 
+	/**
+	 * Собранные со дна звезды
+	 */
 	this.foundStars = {};
 
+	/**
+	 * Дайверы, находящиеся в игре
+	 */
 	this.divers = {};
+
+	/**
+	 * Звезды в воде
+	 */
 	this.stars = {};
 
+	/**
+	 * Добавление нового дайвера
+	 */
 	this.addDiver = function()
 	{
-		this.divers['Diver' + this.iterator] = new this.diver('Diver' + this.iterator);
+		this.divers['Diver' + this.iterator] = new this.Diver('Diver' + this.iterator);
 	}
 
+	/**
+	 * Удаление дайвера с поверхности
+	 */
 	this.deleteDiver = function()
 	{
+		this.pause();
 		for (var d in this.divers)
 		{
 			if (this.divers[d].state == 'zapravka')
 			{
 				if (this.compressorUser == this.divers[d].name) this.compressorUser = null;
-				delete this.divers[d];
+				this.divers[d].say("Ухожу на корабль");
+				this.divers[d].direction = 'delete';
 				break;
 			}
 		}
+		this.play();
 	}
 
+	/**
+	 * Добавление новой звезды в указанных координатах
+	 *
+	 * @param integer x
+	 * @param integer y
+	 */
 	this.addStar = function(x, y)
 	{
 		var countStars = Object.keys(this.stars).length;
 		if (countStars < 100)
-			this.stars['Star' + this.iterator] = new this.star(x, y, 'Star' + this.iterator);
+			this.stars['Star' + this.iterator] = new this.Star(x, y, 'Star' + this.iterator);
 	}
 
-	this.star = function(x, y, name){
+	/**
+	 * Функция-конструктор объекта Звезда
+	 *
+	 * @param integer x
+	 * @paran integer y
+	 * @param String name Имя
+	 */
+	this.Star = function(x, y, name){
 		this.name = name;
 		this.direction = 'd'; // d, w (wait)
 		this.state = 'free';// free, owned, spotted
@@ -135,12 +221,20 @@ function diverGame()
 		this.img = self.images['star' + this.value];
 		this.deep = 510 + Math.round(Math.random() * 20);
 
+		/**
+		 * Новая позиция на холсте
+		 */
 		this.newPosition = function()
 		{
 			if (this.position.y > this.deep) this.direction = 'w';
 			this.position.y += 4*20/self.fps;
 		}
 
+		/**
+		 * Отрисовка звезды на холсте
+		 *
+		 * @param <type> ctx Контекст холста
+		 */
 		this.render = function (ctx)
 		{
 			if (this.direction == 'd') this.newPosition();
@@ -148,20 +242,31 @@ function diverGame()
 		}
 	}
 
-	this.diver = function(name){
+	/**
+	 * Функция-конструктор объекта Дайвер
+	 *
+	 * @param String name Имя
+	 */
+	this.Diver = function(name)
+	{
 		this.name = name;
-		this.direction = "dr"; // d, u, l, r, z
-		this.state = "dive" // dive, scan, ascent
-		this.stops = {380:5, 240:10, 184:15};
-		this.oxygen = 10000;
-		this.haveStar = {};
-		this.spottedStar = {name:'empty', value:0};
-		this.smallestStar = {name:'empty', value:0};
-		this.position = {x : 585, y : 80};
-		this.purpose = {x : 586, y : 490};
-		this.thoughtCloud = false;
-		this.img = self.images.diverdown;
+		this.direction = "dr"; // Направление и позиция движения dl, dr, ul, ur, l, r
+		this.state = "dive" // Текущее состояние дайвера dive, scan, ascent, zapravka
+		this.stops = {380:5, 240:10, 184:15}; // Информация об остановках
+		this.oxygen = 20000; // Балоны c кислородом
+		this.haveStar = {}; // Имеющиеся в руках звезды
+		this.spottedStar = {name:'empty', value:0}; // Замеченная звезда
+		this.smallestStar = {name:'empty', value:0}; // Наименьшая из звезд
+		this.position = {x : 585, y : 50}; // Позиция дайвера
+		this.purpose = {x : 586, y : 490}; // Цель движения дайвера
+		this.thoughtCloud = false; // Облако раздумий :)
+		this.img = self.images.diverdown; // Изображение дайвера
 
+		/**
+		 * Изменени направления движения дайвера и соответствующая смена изображения
+		 *
+		 * @param String direction Направление
+		 */
 		this.changeDirection = function(direction)
 		{
 			switch (direction) {
@@ -177,6 +282,9 @@ function diverGame()
 			this.direction = direction;
 		}
 
+		/**
+		 * Проверка правильности движения Дайвера к цели
+		 */
 		this.checkDirection = function (w,h)
 		{
 			if (['l','r'].indexOf(this.direction) != -1)
@@ -191,6 +299,12 @@ function diverGame()
 			}
 		}
 
+		/**
+		 * Вычисление новой позиции дайвера
+		 *
+		 * @param Integer w Ширина холста
+		 * @param Intager h Высота холста
+		 */
 		this.newPosition = function(w,h)
 		{
 			switch (this.direction) {
@@ -214,23 +328,44 @@ function diverGame()
 				}
 				case 'ul': {}
 				case 'ur': {
-					if (this.stops[Math.round(this.position.y)] && this.stops[Math.round(this.position.y)] > 0) {
-						this.stops[Math.round(this.position.y)] -= 1/self.fps;
-						this.thoughtCloud = true;
-						break;
+					for (var s in this.stops)
+					{
+						if (Math.abs(this.position.y - parseInt(s)) < 2 && this.stops[s] > 0)
+						{
+							this.stops[s] -= 1/self.fps;
+							this.thoughtCloud = true;
+							break;
+						}
+						else
+						{
+							this.thoughtCloud = false;
+						}
 					}
-					this.thoughtCloud = false;
-					if (this.position.y > 80) this.position.y -= 1*20/self.fps;
-					if (this.position.y > 460 && this.position.y < 520) this.position.x -= 17/30*20/self.fps;
-					if (this.position.y >= 310 && this.position.y <= 460) this.position.x += 17/155*20/self.fps;
-					if (this.position.y == 260) this.position.x -= 1*20/self.fps;
+					if (!this.thoughtCloud)
+					{
+						if (this.position.y > 80) this.position.y -= 1*20/self.fps;
+						if (this.position.y > 460 && this.position.y < 520) this.position.x -= 17/30*20/self.fps;
+						if (this.position.y >= 310 && this.position.y <= 460) this.position.x += 17/155*20/self.fps;
+						if (this.position.y == 260) this.position.x -= 1*20/self.fps;
+					}
 					break;
+				}
+				case 'delete' :	{
+					if (this.position.y < 50) delete self.divers[this.name];
+					this.position.y -= 1*20/self.fps;
 				}
 			}
 
 			this.checkDirection(w,h);
 		}
 
+		/**
+		 * Установление новой цели движения
+		 *
+		 * @param String state состояние
+		 * @param Integer x
+		 * @param Integer y
+		 */
 		this.newPurpose = function(state, x, y)
 		{
 			this.position.x = Math.round(this.position.x);
@@ -241,6 +376,13 @@ function diverGame()
 			this.checkDirection();
 		}
 
+		/**
+		 * Проверка положение дайвера (Достиг ли он цели?)
+		 * Учитывая fps Создаем погрешность вычисления
+		 *
+		 * @param Integer w Ширина холста
+		 * @param Integer h Высота холста
+		 */
 		this.checkPosition = function(w,h)
 		{
 			var delta = 80/self.fps;
@@ -248,20 +390,24 @@ function diverGame()
 			if (
 				Math.abs(this.purpose.x - this.position.x) > delta ||
 				Math.abs(this.purpose.y - this.position.y) > delta) return;
-			
+
 			switch (this.state)
 			{
+				// Погружение
 				case 'dive': {
 					this.changeDirection('l');
 					Math.random() > .5 ? this.newPurpose('scan', w - 62, 490) : this.newPurpose('scan', -1, 490);
 					break;
 				}
+				// Сканирование (поиск звезд)
 				case 'scan': {
 					if (this.spottedStar.name == 'empty') break;
 					this.pickupStar()
 					break;
 				}
+				// Возвращение на корабль
 				case 'ascent': {
+					// Достигли ли корабля?
 					if (Math.abs(this.position.y-80) > delta)
 					{
 						this.position.x = Math.abs(this.position.x - 620) < 2 ? 620 : 585;
@@ -279,28 +425,37 @@ function diverGame()
 			}
 		}
 
+		/**
+		 * Радиосвязь дайвера
+		 *
+		 * @param String str Слова дайвера
+		 */
 		this.say = function(str)
 		{
 			if (document.getElementById('diverRadio').style.display && document.getElementById('diverRadio').style.display != 'none')
 				document.getElementById('diverRadio').innerHTML = "<strong>" + this.name + "</strong>: " + str + "<br/>" + document.getElementById('diverRadio').innerHTML;
-//			console.log(this.name + ": " + str);
 		}
 
+		/**
+		 * Дыхание дайвера с учетом звезд
+		 */
 		this.breathe = function()
 		{
-			if (this.state == "zapravka")
+			// Если у судна, то снимаем скафандр и ждем заправки
+			if (this.state == "zapravka" && this.direction != 'delete')
 			{
 				if (Object.keys(this.haveStar).length != 0)
 				{
-					this.say("Принес звезды. Заправляю кислородные балоны.");
+					this.say("Принес звезды. Жду заправки балонов.");
 					for (var s in this.haveStar) self.foundStars[s] = this.haveStar[s];
 					this.haveStar = {};
 				}
 
-				if (!self.compressorUser) {self.compressorUser = this.name; this.position.y -= 2; };
+				if (!self.compressorUser) {self.compressorUser = this.name; this.position.y -= 3; };
 				if (self.compressorUser == this.name) this.oxygen += 3000/self.fps;
 				if (this.oxygen > 20000)
 				{
+					this.stops = {380:5, 240:10, 184:15};
 					self.compressorUser = null;
 					this.say("Заправил кислородные балоны, спускаюсь на дно...");
 					this.setSmallestStar();
@@ -315,8 +470,8 @@ function diverGame()
 				this.oxygen -= (50 / self.fps);
 				for(var i in this.haveStar) this.oxygen -= (this.haveStar[i].value / self.fps);
 				// хватает ли нам кислорода?
-				// (20 + 50)*30 + 550 (и +500 по технике безопасности :))
-				if (this.oxygen < 3500 && this.state != 'ascent')
+				// (20 + 50) * 30 (от левого угла до троса и по тросу) + 1500(остановки) + 550 (компенсация) (и +500 по технике безопасности :))
+				if (this.oxygen < 5000 && this.state != 'ascent')
 				{
 					this.say('Кончается кислород... Возвращаюсь на корабль');
 					if (this.spottedStar.name != 'empty') self.stars[this.spottedStar.name].state = "free";
@@ -326,6 +481,13 @@ function diverGame()
 
 		}
 
+		/**
+		 * Сканирование толщи воды на наличие звезд
+		 * Замечаем и плывем к наибольшей звезде
+		 *
+		 * @param Integer w Ширина холста
+		 * @param Integer h Высота холста
+		 */
 		this.scan = function(w,h){
 			for (var i in self.stars)
 			{
@@ -342,13 +504,16 @@ function diverGame()
 					if (this.smallestStar.name != 'empty' && Object.keys(this.haveStar).length == 2) this.trowStar();
 					star.state = "spotted";
 					this.spottedStar = star;
-					this.newPurpose('scan', star.position.x, star.position.y - 20)
+					this.newPurpose('scan', star.position.x + (star.position.x<this.position.x?30:-30), star.position.y - 30)
 					star.owner = this.name;
 					this.say("Плыву к звезде " + star.value);
 				}
 			}
 		}
 
+		/**
+		 * Компенсирую баласт для всплытия с учетом подобранных звезд
+		 */
 		this.compensation = function()
 		{
 			this.say("Заправляю компенсатор плавучести");
@@ -356,7 +521,12 @@ function diverGame()
 			this.oxygen -= 50;
 		}
 
-		this.renderOxygen = function(ctx, x, y)
+		/**
+		 * Отрисовка количества дыхательной смеси
+		 *
+		 * @param <type> ctx Контекст холста
+		 */
+		this.renderOxygen = function(ctx)
 		{
 			ctx.beginPath();
 			ctx.fillStyle = "rgb(0, 63, 255)";
@@ -366,6 +536,11 @@ function diverGame()
 			ctx.stroke();
 		}
 
+		/**
+		 * Отрисовка имеющихся звезд
+		 *
+		 * @param <type> ctx Контекст холста
+		 */
 		this.renderStars = function(ctx)
 		{
 			var i = 1;
@@ -380,23 +555,24 @@ function diverGame()
 			}
 		}
 
+		/**
+		 * Отрисовка дайвера, дыхательной смеси и звезд; смена положения
+		 */
 		this.render = function (ctx)
 		{
-			try{
-				this.breathe();
-				if( this.state == 'scan') this.scan(ctx.canvas.width, ctx.canvas.height);
-				this.checkPosition(ctx.canvas.width, ctx.canvas.height);
-				this.newPosition(ctx.canvas.width, ctx.canvas.height);
-
-				this.renderOxygen(ctx, Math.round(this.position.x), Math.round(this.position.y) - 2, .5);
-				ctx.drawImage(this.img, Math.round(this.position.x), Math.round(this.position.y) + 3);
-				this.renderStars(ctx);
-
-				if (this.thoughtCloud) ctx.drawImage(self.images.thought, Math.round(this.position.x)-100, Math.round(this.position.y) - 50);
-//				ctx.drawImage(canvas, Math.round(this.position.x), Math.round(this.position.y));
-			}catch(e){console.log(e)}
+			this.breathe();
+			if( this.state == 'scan') this.scan(ctx.canvas.width, ctx.canvas.height);
+			this.checkPosition(ctx.canvas.width, ctx.canvas.height);
+			this.renderOxygen(ctx);
+			ctx.drawImage(this.img, Math.round(this.position.x), Math.round(this.position.y) + 3);
+			this.renderStars(ctx);
+			if (this.thoughtCloud) ctx.drawImage(self.images.thought, Math.round(this.position.x)-100, Math.round(this.position.y) - 50);
+			this.newPosition(ctx.canvas.width, ctx.canvas.height);
 		}
 
+		/**
+		 * Подбор звезды
+		 */
 		this.pickupStar = function(){
 			this.say('Подобрал звезду ' + this.spottedStar.value);
 			this.spottedStar.state = 'owned';
@@ -408,11 +584,15 @@ function diverGame()
 			if (this.smallestStar.value == 10 && Object.keys(this.haveStar).length == 2)
 			{
 				this.say('Собрал хорошие звезды :) Возвращаюсь на корабль!');
+				// Случайным образом выбираю с какой стороны подплывать к тросу
 				this.newPurpose('ascent', Math.random()>.5?620:585, 490);
-			}else{this.newPurpose('scan', -1, 490)}
+			}else{this.newPurpose('scan', (this.direction=='l'?-1:self.ctx.canvas.width), 490)}
 			this.spottedStar = {name:'empty', value:0};
 		}
 
+		/**
+		 * Установка наименьшей звезды
+		 */
 		this.setSmallestStar = function()
 		{
 			this.smallestStar = {name:'empty', value:10};
@@ -422,20 +602,33 @@ function diverGame()
 			}
 		}
 
+		/**
+		 * Сброс наименьшей звезды
+		 */
 		this.trowStar = function(){
 			this.say("Бросаю звезду " + this.smallestStar.value);
 			self.stars[this.smallestStar.name] = this.haveStar[this.smallestStar.name];
 			self.stars[this.smallestStar.name].state = 'free';
-//			self.stars[this.smallestStar.name].position.x += Math.round(this.position.x);
+			self.stars[this.smallestStar.name].position.x += (this.direction=='l'?15:35);
 			self.stars[this.smallestStar.name].position.y += - 4;
 			self.stars[this.smallestStar.name].direction = "d";
 			delete this.haveStar[this.smallestStar.name];
 			this.setSmallestStar();
 		}
-		
+
+		// Речь при появлении
 		this.say("Готов к поискам звезд! =)))");
 	}
 
+	/**
+	 * Вспомогательная функция для отрисовки рыб движущихся с разной скоростью
+	 *
+	 * @param Intager iterator Текущая итерация игры
+	 * @param float vx Скорость движения по x
+	 * @param float vy Скорость движения по y
+	 * @param Integer w Ширина холста
+	 * @param Integer h Высота холста
+	 */
 	this.fishXY = function(iterator, vx, vy, w, h)
 	{
 		return {
@@ -444,15 +637,20 @@ function diverGame()
 		}
 	}
 
+	/**
+	 * Отрисовка фона с рыбками, волнами, облаками
+	 */
 	this.renderBackground = function(iterator)
 	{
 		var w = this.ctx.canvas.width;
 		var h = this.ctx.canvas.height;
 
+		// Первые две волны
 		var waveDelta = Math.round(Math.abs(iterator/2 % 25));
-		this.ctx.drawImage(this.images.wave1, waveDelta - 25, 66);
+		this.ctx.drawImage(this.images.wave1, waveDelta - 30, 66);
 		this.ctx.drawImage(this.images.wave2, -waveDelta, 80);
 
+		// Облака
 		var cloudIterator = iterator + 1000;
 		this.ctx.drawImage(this.images.cloudss, Math.round(cloudIterator/1.6 % (w + 150)) - 75, 0);
 		this.ctx.drawImage(this.images.clouds, Math.round(cloudIterator/1.4 % (w + 100)) - 75, 5);
@@ -460,7 +658,7 @@ function diverGame()
 		this.ctx.drawImage(this.images.clouds, Math.round(cloudIterator/1.2 % (w + 75)) - 75, 15);
 		this.ctx.drawImage(this.images.clouds8, Math.round(cloudIterator % (w + 75)) - 75, 25);
 
-		var ts = 0;
+		// Рисуем звезды на корабле
 		var values = [];
 		for(var s in self.foundStars)
 		{
@@ -473,9 +671,11 @@ function diverGame()
 			}
 		}
 
+		// Корабль и третья волна
 		this.ctx.drawImage(this.images.shipEmpty, 512, Math.round(Math.abs(iterator/5 % 4 - 2)));
 		this.ctx.drawImage(this.images.wave3, waveDelta - 25, 94);
 
+		// А теперь группы рыб
 		// fp - Fish Position - Координаты рыбы
 		var fp = this.fishXY(iterator + 300, .5, .3, w, h);
 		this.ctx.drawImage(this.buffer['fish0'] > fp.x ? this.images.fishes75x50 : this.images.fishes75x50r, fp.x, fp.y);
@@ -501,31 +701,42 @@ function diverGame()
 		this.ctx.drawImage(this.buffer['fish5'] > fp.x ? this.images.fishes2 : this.images.fishes2r, fp.x, fp.y);
 		this.buffer['fish5'] = fp.x;
 
+		// Трос ближе всех
 		this.ctx.drawImage(this.images.tros, 592, 64);
 	}
 
+	/**
+	 * Отрисовка всех элементов игры
+	 */
 	this.renderGame = function(iterator)
 	{
 		if (!this.rendered) { return; }
 		this.rendered = false;
-		this.ctx.clearRect(0,0,720,600);
+		this.ctx.clearRect(0,0,this.ctx.canvas.width,this.ctx.canvas.height);
 		this.ctx.save();
-		
+		// фон
 		this.renderBackground(iterator);
-		
-
+		// Звезды
 		for(var s in this.stars) this.stars[s].render(this.ctx);
+		// Дайверы
 		for(var d in this.divers) this.divers[d].render(this.ctx);
 		
 		this.ctx.restore();
+		
 		this.fps = Math.round(1000 / (new Date() - this.date));
 		if (this.fps < 1) this.fps = 1;
-
+		// Пишем FPS
 		document.getElementById('fps').innerHTML = this.fps;
+		// Каждые 1000 итераций чищу лог радиосвязи
+		if (iterator % 1000 == 0) document.getElementById('diverRadio').innerHTML.substr(0, 1000);
+
 		this.date = new Date();
 		this.rendered = true;
 	}
-	
+
+	/**
+	 * Изменение размеров Холста
+	 */
 	this.changeSize = function(w,h)
 	{
 		if (w < 720) w = 720;
@@ -540,11 +751,17 @@ function diverGame()
 		this.ctx.canvas.height = h;
 	}
 
+	/**
+	 * Сбор статистики
+	 *
+	 * @param <type> eId HTML элемент, куда все писать
+	 */
 	this.getStatistic = function(eId)
 	{
 		var elem = document.getElementById(eId);
 		var inWater = {};
 		var found = {};
+		var pd = {}; // per Diver
 
 		elem.innerHTML = "<strong>В воде звезд: " + Object.keys(this.stars).length + "</strong><br/>";
 
@@ -560,30 +777,49 @@ function diverGame()
 		}
 
 		elem.innerHTML += "<br/><strong>Собрано звезд: " + Object.keys(this.foundStars).length + "</strong><br/>";
+
 		for (var s in this.foundStars){
+			if (!pd[this.foundStars[s].owner]) pd[this.foundStars[s].owner] = 0;
 			if (!found[this.foundStars[s].value]) found[this.foundStars[s].value] = 0;
 			found[this.foundStars[s].value] += 1;
+			pd[this.foundStars[s].owner] += 1;
 		}
 		for(var i = 10; i >= 1; i--)
 		{
 			if (!found[i]) continue;
 			elem.innerHTML += "Номиналом " + i + ": " + found[i] + "<br/>";
 		}
-	}
-	this.getDiverStatistic = function(diverName)
-	{
-		for (var d in this.divers)
+
+		elem.innerHTML += "<br/><strong>Лучшие дайверы:</strong><br/>";
+		for(var d in pd)
 		{
-			if (this.divers[s].name == diverName)
-			{
-				var diver = this.divers[s];
-			}
+			elem.innerHTML += "<strong>" + d + ":</strong> "+ pd[d] + "<br/>";
 		}
-
-		var str = ">>> Дайвер " + diverName + " несет звезды ";
-
-		document.getElementById('diverRadio').innerHTML =
-		elem.innerHTML = "<strong>В воде звезд: " + Object.keys(this.stars).length + "</strong><br/>";
 	}
 }
 
+var dg = new diverGame();
+window.onload = function()
+{
+	dg.init();
+	document.getElementById("loading").style.display = "none";
+	document.getElementById("addDiver").onclick = function(e){dg.addDiver(); return false;};
+	document.getElementById("deleteDiver").onclick = function(e){dg.deleteDiver(); return false;};
+
+	// Все что ниже - дополнительная информация к игре
+	document.getElementById("pause").onclick = function(e){dg.pause()};
+	document.getElementById("play").onclick = function(e){dg.play()};
+	document.getElementById("diverRadioHeader").onclick = function(e){
+		if (document.getElementById("diverRadio").style.display && document.getElementById("diverRadio").style.display != 'none'){
+			document.getElementById("diverRadio").style.display = 'none';
+			document.getElementById("diverRadio").innerHTML = "Начинаем слушать радиосвязь =)";
+		}
+		else{
+			document.getElementById("diverRadio").style.display = 'block';
+		}
+	};
+
+	document.getElementById("statisticHeader").onclick = function(e){ dg.getStatistic('statistic');	};
+}
+// Перед обновлением окна или перед его закрытием, останавливаем игру
+window.onbeforeunload  = function () {dg.pause()}
