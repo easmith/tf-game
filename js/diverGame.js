@@ -391,6 +391,10 @@ function diverGame()
 				Math.abs(this.purpose.x - this.position.x) > delta ||
 				Math.abs(this.purpose.y - this.position.y) > delta) return;
 
+			// Корректировка позиции
+			this.position.x = this.purpose.x
+			this.position.y = this.purpose.y
+
 			switch (this.state)
 			{
 				// Погружение
