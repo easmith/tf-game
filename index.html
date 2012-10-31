@@ -1,0 +1,42 @@
+<!DOCTYPE html>
+<html>
+<head>
+<title>Помоги TopFace собрать оценки</title>
+<meta http-equiv="X-UA-Compatible" content="IE=edge" />
+<meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+<link rel="stylesheet" type="text/css" href="main.css" />
+<script language="javascript" src="js/diverGame.js" type="text/javascript"></script>
+</head>
+<body>
+
+<div id="main">
+	<div id="tools"><div class="gamename">Помоги TopFace собрать оценки</div><button id="deleteDiver"></button><button id="addDiver"></button></div>
+	<canvas id="backCanvas">Обновите браузер</canvas>
+</div>
+
+<div class="information">
+	<h3>Информация</h3>
+	<p> Каждую сотую секунды пытаемся обновить холст. В итоге получается <span id='fps'>0</span> кадров в секунду.</p>
+	<p>	Игру можно приостановить или продолжить, нажав на соответствующие кнопки:
+	<button id="pause">Pause</button>
+	<button id="play">Play</button>
+	</p>
+
+	<p>	Дайверы собирают звезды по всей ширине холста. <br/> Ее можно произвольно изменить. Для примера 4 варианта:
+		<button onclick="dg.changeSize(720,600)">720px</button>
+		<button onclick="dg.changeSize(900,600)">900px</button>
+		<button onclick="dg.changeSize(1200,600)">1200px</button>
+		<button onclick="dg.changeSize(1440,600)">1400px</button>
+	</p>
+	<fieldset>
+		<legend id="statisticHeader">Статистика (кликните, чтобы обновить):</legend>
+		<div id="statistic"></div>
+	</fieldset>
+	<fieldset>
+		<legend id="diverRadioHeader">Радиосвязь дайверов (кликните, чтобы скрыть или показать):</legend>
+		<div id="diverRadio">Начинаем слушать радиосвязь =)</div>
+	</fieldset>
+</div>
+<div id="loading"><h1>Загрузка...</h1></div>
+</body>
+</html>
